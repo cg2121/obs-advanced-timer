@@ -10,7 +10,7 @@ This is a Lua script for OBS Studio that sets a text source as a timer with adva
 -Recording timer (starts timer when recording start)  
 
 **Formatting**  
-The default format is: %hh:%mm:%ss (00:00:00)  
+The default format is: %HH:%mm:%ss (00:00:00)  
 
 ```
 %d - days

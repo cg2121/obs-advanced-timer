@@ -385,7 +385,7 @@ function script_defaults(settings)
 	obs.obs_data_set_default_string(settings, "stop_text", "Starting soon (tm)")
 	obs.obs_data_set_default_string(settings, "mode", "Countdown")
 	obs.obs_data_set_default_string(settings, "a_mode", "Global (timer always active)")
-	obs.obs_data_set_default_string(settings, "format", "%hh:%mm:%ss")
+	obs.obs_data_set_default_string(settings, "format", "%HH:%mm:%ss")
 end
 
 function script_save(settings)
