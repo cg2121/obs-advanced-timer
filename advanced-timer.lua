@@ -456,6 +456,9 @@ end
 
 function script_defaults(settings)
 	obs.obs_data_set_default_int(settings, "duration", 5)
+	obs.obs_data_set_default_int(settings, "year", os.date("%Y", now))
+	obs.obs_data_set_default_int(settings, "month", os.date("%m", now))
+	obs.obs_data_set_default_int(settings, "day", os.date("%d", now))
 	obs.obs_data_set_default_string(settings, "stop_text", "Starting soon (tm)")
 	obs.obs_data_set_default_string(settings, "mode", "Countdown")
 	obs.obs_data_set_default_string(settings, "a_mode", "Global (timer always active)")
