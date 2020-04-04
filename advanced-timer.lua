@@ -12,6 +12,7 @@ global        = false
 timer_active  = false
 minute        = 0
 hour          = 0
+countup_start = 0
 
 hotkey_id_reset     = obs.OBS_INVALID_HOTKEY_ID
 hotkey_id_pause     = obs.OBS_INVALID_HOTKEY_ID
@@ -228,6 +229,7 @@ function on_pause(pressed)
 		stop_timer()
 	else
 		stop_timer()
+        
 		start_timer()
 	end
 end
@@ -251,6 +253,7 @@ function settings_modified(props, prop, settings)
 	local p_a_mode = obs.obs_properties_get(props, "a_mode")
 	local button_pause = obs.obs_properties_get(props, "pause_button")
 	local button_reset = obs.obs_properties_get(props, "reset_button")
+    local p_starttotal = obs.obs_properties_get(props, "countup_start")
 
 	if (mode_setting == "Countdown") then
 		obs.obs_property_set_visible(p_duration, true)
@@ -260,6 +263,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+        obs.obs_property_set_visible(p_starttotal, false)
 	elseif (mode_setting == "Countup") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_hour, false)
@@ -267,7 +271,8 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_stop_text, false)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
-			obs.obs_property_set_visible(p_a_mode, true)
+		obs.obs_property_set_visible(p_a_mode, true)
+        obs.obs_property_set_visible(p_starttotal, true)
 	elseif (mode_setting == "Specific time") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_hour, true)
@@ -276,6 +281,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+        obs.obs_property_set_visible(p_starttotal, false)
 	elseif (mode_setting == "Streaming timer") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_hour, false)
@@ -284,6 +290,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
+        obs.obs_property_set_visible(p_starttotal, false)
 	elseif (mode_setting == "Recording timer") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_hour, false)
@@ -292,6 +299,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
+        obs.obs_property_set_visible(p_starttotal, false)
 	end
 
 	return true
@@ -326,6 +334,8 @@ function script_properties()
 		end
 	end
 	obs.source_list_release(sources)
+    
+    local p_starttotal = obs.obs_properties_add_int(props, "countup_start", "Countup Start Time", 0, 1000000000, 0)
 
 	local p_stop_text = obs.obs_properties_add_text(props, "stop_text", "Countdown final text", obs.OBS_TEXT_DEFAULT)
 
@@ -343,6 +353,7 @@ function script_properties()
 	obs.obs_property_set_visible(button_pause, true)
 	obs.obs_property_set_visible(button_reset, true)
 	obs.obs_property_set_visible(p_a_mode, true)
+    obs.obs_property_set_visible(p_starttotal, true)
 
 	return props
 end
@@ -359,7 +370,9 @@ function script_update(settings)
 
 	if mode == "Countdown" then
 		total_seconds = obs.obs_data_get_int(settings, "duration") * 10
-	else
+	elseif mode == "Countup" then
+        total_seconds = obs.obs_data_get_int(settings, "countup_start") * 10
+    else
 		total_seconds = 0
 	end
 
@@ -374,6 +387,7 @@ function script_update(settings)
 	hour = obs.obs_data_get_int(settings, "hour")
 	minute = obs.obs_data_get_int(settings, "minutes")
 	format = obs.obs_data_get_string(settings, "format")
+    countup_start = obs.obs_data_get_int(settings, "countup_start")
 
 	set_time_text()
 
@@ -386,6 +400,7 @@ function script_defaults(settings)
 	obs.obs_data_set_default_string(settings, "mode", "Countdown")
 	obs.obs_data_set_default_string(settings, "a_mode", "Global (timer always active)")
 	obs.obs_data_set_default_string(settings, "format", "%HH:%mm:%ss")
+    obs.obs_data_set_default_int(settings, "countup_start", 0)
 end
 
 function script_save(settings)
