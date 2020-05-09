@@ -8,6 +8,7 @@ This is a Lua script for OBS Studio that sets a text source as a timer with adva
 -Specific time (starts to countdown to a specific time, such as countdown to 12:00 am)  
 -Streaming timer (starts timer when streaming starts)  
 -Recording timer (starts timer when recording start)  
+-Specific year, month, day  
 
 **Formatting**  
 The default format is: %HH:%mm:%ss (00:00:00)  
