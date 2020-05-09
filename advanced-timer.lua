@@ -16,6 +16,7 @@ second        = 0
 day           = 0
 month         = 0
 year          = 0
+settings_     = nil
 
 hotkey_id_reset     = obs.OBS_INVALID_HOTKEY_ID
 hotkey_id_pause     = obs.OBS_INVALID_HOTKEY_ID
@@ -370,13 +371,13 @@ function script_properties()
 	obs.obs_property_list_add_string(p_mode, "Recording timer", "recording")
 	obs.obs_property_set_modified_callback(p_mode, settings_modified)
 
-	local p_duration = obs.obs_properties_add_int(props, "duration", "Countdown duration (seconds)", 1, 100000000, 1)
-	local p_year = obs.obs_properties_add_int(props, "year", "Year", 1971, 100000000, 1)
-	local p_month = obs.obs_properties_add_int(props, "month", "Month (1-12)", 1, 12, 1)
-	local p_day = obs.obs_properties_add_int(props, "day", "Day (1-31)", 1, 31, 1)
-	local p_hour = obs.obs_properties_add_int(props, "hour", "Hour (0-24)", 0, 24, 1)
-	local p_minutes = obs.obs_properties_add_int(props, "minutes", "Minutes (0-59)", 0, 59, 1)
-	local p_seconds = obs.obs_properties_add_int(props, "seconds", "Seconds (0-59)", 0, 59, 1)
+	obs.obs_properties_add_int(props, "duration", "Countdown duration (seconds)", 1, 100000000, 1)
+	obs.obs_properties_add_int(props, "year", "Year", 1971, 100000000, 1)
+	obs.obs_properties_add_int(props, "month", "Month (1-12)", 1, 12, 1)
+	obs.obs_properties_add_int(props, "day", "Day (1-31)", 1, 31, 1)
+	obs.obs_properties_add_int(props, "hour", "Hour (0-24)", 0, 24, 1)
+	obs.obs_properties_add_int(props, "minutes", "Minutes (0-59)", 0, 59, 1)
+	obs.obs_properties_add_int(props, "seconds", "Seconds (0-59)", 0, 59, 1)
 	local f_prop = obs.obs_properties_add_text(props, "format", "Format", obs.OBS_TEXT_DEFAULT)
 	obs.obs_property_set_long_description(f_prop, "%d - days\n%hh - hours with leading zero (00..23)\n%h - hours (0..23)\n%HH - hours with leading zero (00..infinity)\n%H - hours (0..infinity)\n%mm - minutes with leading zero (00..59)\n%m - minutes (0..59)\n%MM - minutes with leading zero (00..infinity)\n%M - minutes (0..infinity)\n%ss - seconds with leading zero (00..59)\n%s - seconds (0..59)\n%SS - seconds with leading zero (00..infinity)\n%S - seconds (0..infinity)\n%t - tenths")
 
@@ -393,26 +394,16 @@ function script_properties()
 	end
 	obs.source_list_release(sources)
 
-	local p_stop_text = obs.obs_properties_add_text(props, "stop_text", "Countdown final text", obs.OBS_TEXT_DEFAULT)
+	obs.obs_properties_add_text(props, "stop_text", "Countdown final text", obs.OBS_TEXT_DEFAULT)
 
 	local p_a_mode = obs.obs_properties_add_list(props, "a_mode", "Activation mode", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 	obs.obs_property_list_add_string(p_a_mode, "Global (timer always active)", "global")
 	obs.obs_property_list_add_string(p_a_mode, "Start timer on activation", "start_reset")
 
-	local button_pause = obs.obs_properties_add_button(props, "pause_button", "Start/Stop", pause_button_clicked)
-	local reset_button = obs.obs_properties_add_button(props, "reset_button", "Reset", reset_button_clicked)
+	obs.obs_properties_add_button(props, "pause_button", "Start/Stop", pause_button_clicked)
+	obs.obs_properties_add_button(props, "reset_button", "Reset", reset_button_clicked)
 
-	obs.obs_property_set_visible(p_duration, true)
-	obs.obs_property_set_visible(p_year, false)
-	obs.obs_property_set_visible(p_month, false)
-	obs.obs_property_set_visible(p_day, false)
-	obs.obs_property_set_visible(p_hour, false)
-	obs.obs_property_set_visible(p_minutes, false)
-	obs.obs_property_set_visible(p_seconds, false)
-	obs.obs_property_set_visible(p_stop_text, true)
-	obs.obs_property_set_visible(button_pause, true)
-	obs.obs_property_set_visible(button_reset, true)
-	obs.obs_property_set_visible(p_a_mode, true)
+	settings_modified(props, nil, settings_)
 
 	return props
 end
@@ -489,4 +480,8 @@ function script_load(settings)
 	obs.obs_data_array_release(hotkey_save_array_pause)
 
 	obs.obs_frontend_add_event_callback(on_event)
+
+	settings_ = settings
+
+	script_update(settings)
 end
