@@ -246,7 +246,10 @@ function on_pause(pressed)
 		reset(true)
 	end
 
-	if mode == "Streaming timer" or mode == "Recording timer" then
+	if mode == "Specific date and time" or mode == "Specific time" then
+		total_seconds = delta_time()
+		total = total_seconds
+	elseif mode == "Streaming timer" or mode == "Recording timer" then
 		return
 	end
 
