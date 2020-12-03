@@ -4,6 +4,7 @@ source_name   = ""
 total_seconds = 0
 total         = 0
 stop_text     = ""
+stop_seconds  = 0
 mode          = ""
 a_mode        = ""
 format        = ""
@@ -45,7 +46,7 @@ function delta_time()
 			yearLocal = year
 		end
 	end
-	
+
 	local future = os.time{year=yearLocal, month=monthLocal, day=dayLocal, hour=hour, min=minute, sec=second}
 
 	local seconds = os.difftime(future, now)
@@ -111,7 +112,7 @@ function set_time_text()
 	text = string.gsub(text, "%%s", tostring(seconds))
 	text = string.gsub(text, "%%t", tostring(tenths))
 
-	if total < 1 and (mode == "Countdown" or mode == "Specific time" or mode == "Specific date and time") then
+	if total <= (stop_seconds * 10) and (mode == "Countdown" or mode == "Specific time" or mode == "Specific date and time") then
 		text = stop_text
 	end
 
@@ -278,6 +279,7 @@ function settings_modified(props, prop, settings)
 	local p_minutes = obs.obs_properties_get(props, "minutes")
 	local p_seconds = obs.obs_properties_get(props, "seconds")
 	local p_stop_text = obs.obs_properties_get(props, "stop_text")
+	local p_stop_seconds = obs.obs_properties_get(props, "stop_seconds")
 	local p_a_mode = obs.obs_properties_get(props, "a_mode")
 	local button_pause = obs.obs_properties_get(props, "pause_button")
 	local button_reset = obs.obs_properties_get(props, "reset_button")
@@ -291,6 +293,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, false)
 		obs.obs_property_set_visible(p_seconds, false)
 		obs.obs_property_set_visible(p_stop_text, true)
+		obs.obs_property_set_visible(p_stop_seconds, true)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
@@ -303,6 +306,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, false)
 		obs.obs_property_set_visible(p_seconds, false)
 		obs.obs_property_set_visible(p_stop_text, false)
+		obs.obs_property_set_visible(p_stop_seconds, false)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
@@ -315,6 +319,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, true)
 		obs.obs_property_set_visible(p_seconds, true)
 		obs.obs_property_set_visible(p_stop_text, true)
+		obs.obs_property_set_visible(p_stop_seconds, true)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
@@ -327,6 +332,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, true)
 		obs.obs_property_set_visible(p_seconds, true)
 		obs.obs_property_set_visible(p_stop_text, true)
+		obs.obs_property_set_visible(p_stop_seconds, true)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
@@ -339,6 +345,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, false)
 		obs.obs_property_set_visible(p_seconds, false)
 		obs.obs_property_set_visible(p_stop_text, false)
+		obs.obs_property_set_visible(p_stop_seconds, false)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
@@ -351,6 +358,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(p_minutes, false)
 		obs.obs_property_set_visible(p_seconds, false)
 		obs.obs_property_set_visible(p_stop_text, false)
+		obs.obs_property_set_visible(p_stop_seconds, false)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
@@ -395,6 +403,7 @@ function script_properties()
 	obs.source_list_release(sources)
 
 	obs.obs_properties_add_text(props, "stop_text", "Countdown final text", obs.OBS_TEXT_DEFAULT)
+	obs.obs_properties_add_int(props, "stop_seconds", "Final display start at seconds", 0, 3600, 1)
 
 	local p_a_mode = obs.obs_properties_add_list(props, "a_mode", "Activation mode", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 	obs.obs_property_list_add_string(p_a_mode, "Global (timer always active)", "global")
@@ -409,7 +418,7 @@ function script_properties()
 end
 
 function script_description()
-	return "Sets a text source to act as a timer with advanced options. Hotkeys can be set for starting/stopping and to the reset timer."
+	return "Sets a text source to act as a timer with advanced options. Hotkeys can be set for starting/stopping and to reset the timer."
 end
 
 function script_update(settings)
@@ -432,6 +441,7 @@ function script_update(settings)
 
 	source_name = obs.obs_data_get_string(settings, "source")
 	stop_text = obs.obs_data_get_string(settings, "stop_text")
+	stop_seconds = obs.obs_data_get_int(settings, "stop_seconds")
 	year = obs.obs_data_get_int(settings, "year")
 	month = obs.obs_data_get_int(settings, "month")
 	day = obs.obs_data_get_int(settings, "day")
@@ -451,6 +461,7 @@ function script_defaults(settings)
 	obs.obs_data_set_default_int(settings, "month", os.date("%m", now))
 	obs.obs_data_set_default_int(settings, "day", os.date("%d", now))
 	obs.obs_data_set_default_string(settings, "stop_text", "Starting soon (tm)")
+	obs.obs_data_set_default_int(settings, "stop_seconds", 0)
 	obs.obs_data_set_default_string(settings, "mode", "Countdown")
 	obs.obs_data_set_default_string(settings, "a_mode", "Global (timer always active)")
 	obs.obs_data_set_default_string(settings, "format", "%HH:%mm:%ss")
