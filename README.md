@@ -3,12 +3,13 @@
 This is a Lua script for OBS Studio that sets a text source as a timer with advanced options.  
 
 **Modes**  
--Countdown (countdown from specified amount of seconds)  
--Countup (starts a stopwatch timer)  
--Specific time (starts to countdown to a specific time, such as countdown to 12:00 am)  
--Streaming timer (starts timer when streaming starts)  
--Recording timer (starts timer when recording start)  
--Specific year, month, day  
+- Countdown (countdown from specified amount of seconds)  
+- Countup (starts a stopwatch timer)  
+- Specific time (starts to countdown to a specific time, such as countdown to 12:00 am)  
+- Specific date & time (starts to countdown to a date and time)  
+- Streaming timer (starts timer when streaming starts)  
+- Recording timer (starts timer when recording start)  
+- With the countdown modes, there is an option to countup when the countdown is finished
 
 **Formatting**  
 The default format is: %HH:%mm:%ss (00:00:00)  
@@ -28,11 +29,13 @@ The default format is: %HH:%mm:%ss (00:00:00)
 %SS - seconds with leading zero (00..infinity)
 %S - seconds (0..infinity)
 %t - tenths
+%2t - hundredths
+%3t - thousandths
 ```
 
 **Activation Modes**  
--Global (the timer is always active)  
--Start timer on activation (starts timer when source is activated, such as when switching to a scene with that source or turning the visibility of the source to on)  
+- Global (the timer is always active)  
+- Start timer on activation (starts timer when source is activated, such as when switching to a scene with that source or turning the visibility of the source to on)  
 
 
 **Hotkeys**  
