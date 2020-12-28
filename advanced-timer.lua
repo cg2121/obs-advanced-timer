@@ -1,8 +1,6 @@
 obs           = obslua
 source_name   = ""
 
-total_seconds = 0
-total         = 0
 stop_text     = ""
 mode          = ""
 a_mode        = ""
@@ -10,109 +8,100 @@ format        = ""
 activated     = false
 global        = false
 timer_active  = false
-minute        = 0
-hour          = 0
-second        = 0
-day           = 0
-month         = 0
-year          = 0
 settings_     = nil
+orig_time     = 0
+cur_time      = 0
+cur_ns        = 0
+up_when_finished = false
+up            = false
 
 hotkey_id_reset     = obs.OBS_INVALID_HOTKEY_ID
 hotkey_id_pause     = obs.OBS_INVALID_HOTKEY_ID
 
-function delta_time()
-	local dayLocal = 1
-	local monthLocal = 1
-	local yearLocal = 1971
-
+function delta_time(year, month, day, hour, minute, second)
 	local now = os.time()
 
-	if (mode == "Specific time") then
-		yearLocal = os.date("%Y", now)
-		monthLocal = os.date("%m", now)
-		dayLocal = os.date("%d", now)
-	elseif (mode == "Specific date and time") then
-		if day > 0 then
-			dayLocal = day
-		end
-
-		if month > 0 then
-			monthLocal = month
-		end
-
-		if year >= 1971 then
-			yearLocal = year
-		end
+	if (year == -1) then
+		year = os.date("%Y", now)
 	end
-	
-	local future = os.time{year=yearLocal, month=monthLocal, day=dayLocal, hour=hour, min=minute, sec=second}
 
+	if (month == -1) then
+		month = os.date("%m", now)
+	end
+
+	if (day == -1) then
+		day = os.date("%d", now)
+	end
+
+	local future = os.time{year=year, month=month, day=day, hour=hour, min=minute, sec=second}
 	local seconds = os.difftime(future, now)
 
 	if (seconds < 0) then
 		seconds = seconds + 84600
 	end
 
-	local total_time = seconds * 10
-
-	return total_time
+	return seconds * 1000000000
 end
 
-function set_time_text()
-	local text = format
-
-	local tenths   = math.floor(total % 10)
-	local seconds  = math.floor((total / 10) % 60)
-	local minutes  = math.floor((total / 600) % 60)
-	local hours    = math.floor((total / 36000) % 24)
-	local days     = math.floor(total / 864000)
-
-	local hours_infinite  = math.floor(total / 36000)
-	local seconds_infinite  = math.floor(total / 10)
-	local minutes_infinite  = math.floor(total / 600)
+function set_time_text(ns, text)
+	local ms = math.floor(ns / 1000000)
 
 	if string.match(text, "%%HH") then
-		text = string.gsub(text, "%%HH", "%%H")
+		local hours_infinite = math.floor(ms / 3600000)
 		minutes_infinite = string.format("%02d", hours_infinite)
+		text = string.gsub(text, "%%HH", hours_infinite)
 	end
 
 	if string.match(text, "%%MM") then
-		text = string.gsub(text, "%%MM", "%%M")
+		local minutes_infinite = math.floor(ms / 60000)
 		minutes_infinite = string.format("%02d", minutes_infinite)
+		text = string.gsub(text, "%%MM", minutes_infinite)
 	end
 
 	if string.match(text, "%%SS") then
-		text = string.gsub(text, "%%SS", "%%S")
+		local seconds_infinite = math.floor(ms / 1000)
 		seconds_infinite = string.format("%02d", seconds_infinite)
+		text = string.gsub(text, "%%SS", seconds_infinite)
 	end
 
 	if string.match(text, "%%hh") then
-		text = string.gsub(text, "%%hh", "%%h")
+		local hours = math.floor(ms / 3600000) % 24
 		hours = string.format("%02d", hours)
+		text = string.gsub(text, "%%hh", hours)
 	end
 
 	if string.match(text, "%%mm") then
-		text = string.gsub(text, "%%mm", "%%m")
+		local minutes = math.floor(ms / 60000) % 60
 		minutes = string.format("%02d", minutes)
+		text = string.gsub(text, "%%mm", minutes)
 	end
 
 	if string.match(text, "%%ss") then
-		text = string.gsub(text, "%%ss", "%%s")
+		local seconds = math.floor(ms / 1000) % 60
 		seconds = string.format("%02d", seconds)
+		text = string.gsub(text, "%%ss", seconds)
 	end
 
-	text = string.gsub(text, "%%d", tostring(days))
-	text = string.gsub(text, "%%H", tostring(hours_infinite))
-	text = string.gsub(text, "%%h", tostring(hours))
-	text = string.gsub(text, "%%M", tostring(minutes_infinite))
-	text = string.gsub(text, "%%m", tostring(minutes))
-	text = string.gsub(text, "%%S", tostring(seconds_infinite))
-	text = string.gsub(text, "%%s", tostring(seconds))
-	text = string.gsub(text, "%%t", tostring(tenths))
+	if string.match(text, "%%d") then
+		local days = math.floor(ms / 86400000)
+		text = string.gsub(text, "%%d", tostring(days))
+	end
 
-	if total < 1 and (mode == "Countdown" or mode == "Specific time" or mode == "Specific date and time") then
-		text = stop_text
+	local decimal = string.format("%.3d", ms % 1000)
+
+	if string.match(text, "%%3t") then
+		decimal = string.sub(decimal, 1, 3)
+		text = string.gsub(text, "%%3t", decimal)
+	end
+
+	if string.match(text, "%%2t") then
+		decimal = string.sub(decimal, 1, 2)
+		text = string.gsub(text, "%%2t", decimal)
+	end
+
+	if string.match(text, "%%t") then
+		decimal = string.sub(decimal, 1, 1)
+		text = string.gsub(text, "%%t", decimal)
 	end
 
 	local source = obs.obs_get_source_by_name(source_name)
@@ -125,35 +114,48 @@ function set_time_text()
 	end
 end
 
-function timer_callback()
-	if mode == "Countup" or mode == "Streaming timer" or mode == "Recording timer" then
-		total = total + 1
+function script_tick(sec)
+	if timer_active == false then
+		return
+	end
+
+	local delta = obs.os_gettime_ns() - orig_time
+
+	if mode == "Countup" or mode == "Streaming timer" or mode == "Recording timer" or up == true then
+		cur_ns = cur_time + delta
 	else
-		total = total - 1
+		cur_ns = cur_time - delta
 	end
 
-	if total < 1 then
-		stop_timer()
-		total = 0
+	if cur_ns < 1 and (mode == "Countdown" or mode == "Specific time" or mode == "Specific date and time") then
+		if up_when_finished == false then
+			set_time_text(cur_ns, stop_text)
+			stop_timer()
+			return
+		else
+			cur_time = 0
+			up = true
+			start_timer()
+			return
+		end
 	end
 
-	set_time_text()
+	set_time_text(cur_ns, format)
 end
 
 function start_timer()
 	timer_active = true
-	obs.timer_add(timer_callback, 100)
+	orig_time = obs.os_gettime_ns()
 end
 
 function stop_timer()
 	timer_active = false
-	obs.timer_remove(timer_callback)
 end
 
 function on_event(event)
 	if event == obs.OBS_FRONTEND_EVENT_STREAMING_STARTED then
 		if mode == "Streaming timer" then
-			total = 0
+			cur_time = 0
 			stop_timer()
 			start_timer()
 		end
@@ -163,7 +165,7 @@ function on_event(event)
 		end
 	elseif event == obs.OBS_FRONTEND_EVENT_RECORDING_STARTED then
 		if mode == "Recording timer" then
-			total = 0
+			cur_time = 0
 			stop_timer()
 			start_timer()
 		end
@@ -190,14 +192,7 @@ function activate(activating)
 			return
 		end
 
-		if mode == "Specific time" or mode == "Specific date and time" then
-			total_seconds = delta_time()
-		end
-
-		total = total_seconds
-
-		stop_timer()
-		start_timer()
+		script_update(settings_)
 	end
 end
 
@@ -228,13 +223,7 @@ function reset(pressed)
 		return
 	end
 
-	if mode == "Specific time" or mode == "Specific date and time" then
-		total_seconds = delta_time()
-	end
-
-	total = total_seconds
-	stop_timer()
-	set_time_text()
+	script_update(settings_)
 end
 
 function on_pause(pressed)
@@ -242,16 +231,17 @@ function on_pause(pressed)
 		return
 	end
 
-	if total == 0 then
-		reset(true)
-	end
-
 	if mode == "Streaming timer" or mode == "Recording timer" then
 		return
 	end
 
+	if cur_ns < 1 then
+		reset(true)
+	end
+
 	if timer_active then
 		stop_timer()
+		cur_time = cur_ns
 	else
 		stop_timer()
 		start_timer()
@@ -260,12 +250,12 @@ end
 
 function pause_button_clicked(props, p)
 	on_pause(true)
-	return false
+	return true
 end
 
 function reset_button_clicked(props, p)
 	reset(true)
-	return false
+	return true
 end
 
 function settings_modified(props, prop, settings)
@@ -281,6 +271,7 @@ function settings_modified(props, prop, settings)
 	local p_a_mode = obs.obs_properties_get(props, "a_mode")
 	local button_pause = obs.obs_properties_get(props, "pause_button")
 	local button_reset = obs.obs_properties_get(props, "reset_button")
+	local up_finished = obs.obs_properties_get(props, "countup_countdown_finished")
 
 	if (mode_setting == "Countdown") then
 		obs.obs_property_set_visible(p_duration, true)
@@ -294,6 +285,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Countup") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_year, false)
@@ -306,6 +298,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+		obs.obs_property_set_visible(up_finished, false)
 	elseif (mode_setting == "Specific time") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_year, false)
@@ -318,6 +311,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Specific date and time") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_year, true)
@@ -330,6 +324,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
+		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Streaming timer") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_year, false)
@@ -342,6 +337,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
+		obs.obs_property_set_visible(up_finished, false)
 	elseif (mode_setting == "Recording timer") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_year, false)
@@ -354,6 +350,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, false)
 		obs.obs_property_set_visible(button_reset, false)
 		obs.obs_property_set_visible(p_a_mode, false)
+		obs.obs_property_set_visible(up_finished, false)
 	end
 
 	return true
@@ -379,14 +376,14 @@ function script_properties()
 	obs.obs_properties_add_int(props, "minutes", "Minutes (0-59)", 0, 59, 1)
 	obs.obs_properties_add_int(props, "seconds", "Seconds (0-59)", 0, 59, 1)
 	local f_prop = obs.obs_properties_add_text(props, "format", "Format", obs.OBS_TEXT_DEFAULT)
-	obs.obs_property_set_long_description(f_prop, "%d - days\n%hh - hours with leading zero (00..23)\n%h - hours (0..23)\n%HH - hours with leading zero (00..infinity)\n%H - hours (0..infinity)\n%mm - minutes with leading zero (00..59)\n%m - minutes (0..59)\n%MM - minutes with leading zero (00..infinity)\n%M - minutes (0..infinity)\n%ss - seconds with leading zero (00..59)\n%s - seconds (0..59)\n%SS - seconds with leading zero (00..infinity)\n%S - seconds (0..infinity)\n%t - tenths")
+	obs.obs_property_set_long_description(f_prop, "%d - days\n%hh - hours with leading zero (00..23)\n%h - hours (0..23)\n%HH - hours with leading zero (00..infinity)\n%H - hours (0..infinity)\n%mm - minutes with leading zero (00..59)\n%m - minutes (0..59)\n%MM - minutes with leading zero (00..infinity)\n%M - minutes (0..infinity)\n%ss - seconds with leading zero (00..59)\n%s - seconds (0..59)\n%SS - seconds with leading zero (00..infinity)\n%S - seconds (0..infinity)\n%t - tenths\n%2t - hundredths\n%3t - thousandths")
 
 	local p = obs.obs_properties_add_list(props, "source", "Text source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 	local sources = obs.obs_enum_sources()
 	if sources ~= nil then
 		for _, source in ipairs(sources) do
-			source_id = obs.obs_source_get_id(source)
-			if source_id == "text_gdiplus" or source_id == "text_ft2_source" or source_id == "text_gdiplus_v2" or source_id == "text_ft2_source_v2" then
+			source_id = obs.obs_source_get_unversioned_id(source)
+			if source_id == "text_gdiplus" or source_id == "text_ft2_source" then
 				local name = obs.obs_source_get_name(source)
 				obs.obs_property_list_add_string(p, name, name)
 			end
@@ -399,6 +396,7 @@ function script_properties()
 	local p_a_mode = obs.obs_properties_add_list(props, "a_mode", "Activation mode", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 	obs.obs_property_list_add_string(p_a_mode, "Global (timer always active)", "global")
 	obs.obs_property_list_add_string(p_a_mode, "Start timer on activation", "start_reset")
+	obs.obs_properties_add_bool(props, "countup_countdown_finished", "Countup when done")
 
 	obs.obs_properties_add_button(props, "pause_button", "Start/Stop", pause_button_clicked)
 	obs.obs_properties_add_button(props, "reset_button", "Reset", reset_button_clicked)
@@ -414,42 +412,49 @@ end
 
 function script_update(settings)
 	stop_timer()
+	up = false
 
 	mode = obs.obs_data_get_string(settings, "mode")
 	a_mode = obs.obs_data_get_string(settings, "a_mode")
-
-	if mode == "Countdown" then
-		total_seconds = obs.obs_data_get_int(settings, "duration") * 10
-	else
-		total_seconds = 0
-	end
-
-	if a_mode == "Global (timer always active)" then
-		global = true
-	else
-		global = false
-	end
-
 	source_name = obs.obs_data_get_string(settings, "source")
 	stop_text = obs.obs_data_get_string(settings, "stop_text")
-	year = obs.obs_data_get_int(settings, "year")
-	month = obs.obs_data_get_int(settings, "month")
-	day = obs.obs_data_get_int(settings, "day")
-	hour = obs.obs_data_get_int(settings, "hour")
-	minute = obs.obs_data_get_int(settings, "minutes")
-	second = obs.obs_data_get_int(settings, "seconds")
+	local year = obs.obs_data_get_int(settings, "year")
+	local month = obs.obs_data_get_int(settings, "month")
+	local day = obs.obs_data_get_int(settings, "day")
+	local hour = obs.obs_data_get_int(settings, "hour")
+	local minute = obs.obs_data_get_int(settings, "minutes")
+	local second = obs.obs_data_get_int(settings, "seconds")
 	format = obs.obs_data_get_string(settings, "format")
+	up_when_finished = obs.obs_data_get_bool(settings, "countup_countdown_finished")
 
-	set_time_text()
+	if mode == "Countdown" then
+		cur_time = obs.obs_data_get_int(settings, "duration") * 1000000000
+	elseif mode == "Specific time" then
+		cur_time = delta_time(-1, -1, -1, hour, minute, second)
+	elseif mode == "Specific date and time" then
+		cur_time = delta_time(year, month, day, hour, minute, second)
+	else
+		cur_time = 0
+	end
 
-	reset(true)
+	global = a_mode == "Global (timer always active)"
+
+	if mode == "Streaming timer" or mode == "Recording timer" then
+		global = true
+	end
+
+	set_time_text(cur_time, format)
+
+	if global == false then
+		start_timer()
+	end
 end
 
 function script_defaults(settings)
 	obs.obs_data_set_default_int(settings, "duration", 5)
-	obs.obs_data_set_default_int(settings, "year", os.date("%Y", now))
-	obs.obs_data_set_default_int(settings, "month", os.date("%m", now))
-	obs.obs_data_set_default_int(settings, "day", os.date("%d", now))
+	obs.obs_data_set_default_int(settings, "year", os.date("%Y", os.time()))
+	obs.obs_data_set_default_int(settings, "month", os.date("%m", os.time()))
+	obs.obs_data_set_default_int(settings, "day", os.date("%d", os.time()))
 	obs.obs_data_set_default_string(settings, "stop_text", "Starting soon (tm)")
 	obs.obs_data_set_default_string(settings, "mode", "Countdown")
 	obs.obs_data_set_default_string(settings, "a_mode", "Global (timer always active)")
