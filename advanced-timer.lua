@@ -294,6 +294,7 @@ end
 function settings_modified(props, prop, settings)
 	local mode_setting = obs.obs_data_get_string(settings, "mode")
 	local p_duration = obs.obs_properties_get(props, "duration")
+	local p_offset = obs.obs_properties_get(props, "offset")
 	local p_year = obs.obs_properties_get(props, "year")
 	local p_month = obs.obs_properties_get(props, "month")
 	local p_day = obs.obs_properties_get(props, "day")
@@ -308,6 +309,7 @@ function settings_modified(props, prop, settings)
 
 	if (mode_setting == "Countdown") then
 		obs.obs_property_set_visible(p_duration, true)
+		obs.obs_property_set_visible(p_offset, false)
 		obs.obs_property_set_visible(p_year, false)
 		obs.obs_property_set_visible(p_month, false)
 		obs.obs_property_set_visible(p_day, false)
@@ -321,6 +323,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Countup") then
 		obs.obs_property_set_visible(p_duration, false)
+		obs.obs_property_set_visible(p_offset, true)
 		obs.obs_property_set_visible(p_year, false)
 		obs.obs_property_set_visible(p_month, false)
 		obs.obs_property_set_visible(p_day, false)
@@ -334,6 +337,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(up_finished, false)
 	elseif (mode_setting == "Specific time") then
 		obs.obs_property_set_visible(p_duration, false)
+		obs.obs_property_set_visible(p_offset, false)
 		obs.obs_property_set_visible(p_year, false)
 		obs.obs_property_set_visible(p_month, false)
 		obs.obs_property_set_visible(p_day, false)
@@ -347,6 +351,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Specific date and time") then
 		obs.obs_property_set_visible(p_duration, false)
+		obs.obs_property_set_visible(p_offset, false)
 		obs.obs_property_set_visible(p_year, true)
 		obs.obs_property_set_visible(p_month, true)
 		obs.obs_property_set_visible(p_day, true)
@@ -360,6 +365,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(up_finished, true)
 	elseif (mode_setting == "Streaming timer") then
 		obs.obs_property_set_visible(p_duration, false)
+		obs.obs_property_set_visible(p_offset, false)
 		obs.obs_property_set_visible(p_year, false)
 		obs.obs_property_set_visible(p_month, false)
 		obs.obs_property_set_visible(p_day, false)
@@ -373,6 +379,7 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(up_finished, false)
 	elseif (mode_setting == "Recording timer") then
 		obs.obs_property_set_visible(p_duration, false)
+		obs.obs_property_set_visible(p_offset, false)
 		obs.obs_property_set_visible(p_year, false)
 		obs.obs_property_set_visible(p_month, false)
 		obs.obs_property_set_visible(p_day, false)
@@ -402,6 +409,7 @@ function script_properties()
 	obs.obs_property_set_modified_callback(p_mode, settings_modified)
 
 	obs.obs_properties_add_int(props, "duration", "Countdown duration (seconds)", 1, 100000000, 1)
+	obs.obs_properties_add_int(props, "offset", "Countup offset (seconds)", 0, 100000000, 1)
 	obs.obs_properties_add_int(props, "year", "Year", 1971, 100000000, 1)
 	obs.obs_properties_add_int(props, "month", "Month (1-12)", 1, 12, 1)
 	obs.obs_properties_add_int(props, "day", "Day (1-31)", 1, 31, 1)
@@ -462,6 +470,8 @@ function script_update(settings)
 
 	if mode == "Countdown" then
 		cur_time = obs.obs_data_get_int(settings, "duration") * 1000000000
+	elseif mode == "Countup" then
+		cur_time = obs.obs_data_get_int(settings, "offset") * 1000000000
 	elseif mode == "Specific time" then
 		cur_time = delta_time(-1, -1, -1, hour, minute, second)
 	elseif mode == "Specific date and time" then
@@ -485,6 +495,7 @@ end
 
 function script_defaults(settings)
 	obs.obs_data_set_default_int(settings, "duration", 5)
+	obs.obs_data_set_default_int(settings, "offset", 0)
 	obs.obs_data_set_default_int(settings, "year", os.date("%Y", os.time()))
 	obs.obs_data_set_default_int(settings, "month", os.date("%m", os.time()))
 	obs.obs_data_set_default_int(settings, "day", os.date("%d", os.time()))
