@@ -12,21 +12,21 @@ This is a Lua script for OBS Studio that sets a text source as a timer with adva
 - With the countdown modes, there is an option to countup when the countdown is finished
 
 **Formatting**  
-The default format is: %HH:%mm:%ss (00:00:00)  
+The default format is: %0H:%0m:%0s (00:00:00)  
 
 ```
 %d - days
-%hh - hours with leading zero (00..23)
+%0h - hours with leading zero (00..23)
 %h - hours (0..23)
-%HH - hours with leading zero (00..infinity)
+%0H - hours with leading zero (00..infinity)
 %H - hours (0..infinity)
-%mm - minutes with leading zero (00..59)
+%0m - minutes with leading zero (00..59)
 %m - minutes (0..59)
-%MM - minutes with leading zero (00..infinity)
+%0M - minutes with leading zero (00..infinity)
 %M - minutes (0..infinity)
-%ss - seconds with leading zero (00..59)
+%0s - seconds with leading zero (00..59)
 %s - seconds (0..59)
-%SS - seconds with leading zero (00..infinity)
+%0S - seconds with leading zero (00..infinity)
 %S - seconds (0..infinity)
 %t - tenths
 %2t - hundredths
