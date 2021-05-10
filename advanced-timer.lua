@@ -14,6 +14,7 @@ cur_time      = 0
 cur_ns        = 0
 up_when_finished = false
 up            = false
+paused        = false
 
 hotkey_id_reset     = obs.OBS_INVALID_HOTKEY_ID
 hotkey_id_pause     = obs.OBS_INVALID_HOTKEY_ID
@@ -272,9 +273,11 @@ function on_pause(pressed)
 	if timer_active then
 		stop_timer()
 		cur_time = cur_ns
+		paused = true
 	else
 		stop_timer()
 		start_timer()
+		paused = false
 	end
 end
 
@@ -475,7 +478,7 @@ function script_update(settings)
 
 	set_time_text(cur_time, format)
 
-	if global == false then
+	if global == false and paused == false then
 		start_timer()
 	end
 end
