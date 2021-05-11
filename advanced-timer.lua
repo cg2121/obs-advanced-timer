@@ -15,6 +15,7 @@ cur_ns        = 0
 up_when_finished = false
 up            = false
 paused        = false
+next_scene	  = ""
 
 hotkey_id_reset     = obs.OBS_INVALID_HOTKEY_ID
 hotkey_id_pause     = obs.OBS_INVALID_HOTKEY_ID
@@ -160,7 +161,18 @@ function script_tick(sec)
 
 	if cur_ns < 1 and (mode == "Countdown" or mode == "Specific time" or mode == "Specific date and time") then
 		if up_when_finished == false then
-			set_time_text(cur_ns, stop_text)
+			stop_timer()
+			if next_scene ~= "" and next_scene ~= "-----" then
+				local source = obs.obs_get_source_by_name(next_scene)
+				obs.obs_source_release(source)
+				obs.obs_frontend_remove_event_callback(on_event)
+				obs.obs_frontend_set_current_scene(source)
+				obs.obs_frontend_add_event_callback(on_event)
+			else
+				set_time_text(cur_ns, stop_text)
+			end
+						
+			returnset_time_text(cur_ns, stop_text)
 			stop_timer()
 			return
 		else
@@ -306,6 +318,7 @@ function settings_modified(props, prop, settings)
 	local button_pause = obs.obs_properties_get(props, "pause_button")
 	local button_reset = obs.obs_properties_get(props, "reset_button")
 	local up_finished = obs.obs_properties_get(props, "countup_countdown_finished")
+	local next_scene = obs.obs_properties_get(props, "next_scene")
 
 	if (mode_setting == "Countdown") then
 		obs.obs_property_set_visible(p_duration, true)
@@ -320,7 +333,8 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
-		obs.obs_property_set_visible(up_finished, true)
+		obs.obs_property_set_visible(up_finished, true)		
+		obs.obs_property_set_visible(next_scene, true)
 	elseif (mode_setting == "Countup") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_offset, true)
@@ -348,7 +362,8 @@ function settings_modified(props, prop, settings)
 		obs.obs_property_set_visible(button_pause, true)
 		obs.obs_property_set_visible(button_reset, true)
 		obs.obs_property_set_visible(p_a_mode, true)
-		obs.obs_property_set_visible(up_finished, true)
+		obs.obs_property_set_visible(up_finished, true)		
+		obs.obs_property_set_visible(next_scene, true)
 	elseif (mode_setting == "Specific date and time") then
 		obs.obs_property_set_visible(p_duration, false)
 		obs.obs_property_set_visible(p_offset, false)
@@ -432,6 +447,16 @@ function script_properties()
 	end
 	obs.source_list_release(sources)
 
+	local t = obs.obs_properties_add_list(props, "next_scene", "Next Scene", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
+	obs.obs_property_list_add_string(t, "-----", "-----")
+	local scene_names = obs.obs_frontend_get_scene_names()
+	if scene_names ~= nil then
+		for i, scene_name in ipairs(scene_names) do
+			obs.obs_property_list_add_string(t, scene_name, scene_name)
+		end
+		obs.bfree(scene_name)
+	end
+
 	obs.obs_properties_add_text(props, "stop_text", "Countdown final text", obs.OBS_TEXT_DEFAULT)
 
 	local p_a_mode = obs.obs_properties_add_list(props, "a_mode", "Activation mode", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
@@ -467,6 +492,7 @@ function script_update(settings)
 	local second = obs.obs_data_get_int(settings, "seconds")
 	format = obs.obs_data_get_string(settings, "format")
 	up_when_finished = obs.obs_data_get_bool(settings, "countup_countdown_finished")
+	next_scene = obs.obs_data_get_string(settings, "next_scene")
 
 	if mode == "Countdown" then
 		cur_time = obs.obs_data_get_int(settings, "duration") * 1000000000
