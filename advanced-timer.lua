@@ -38,7 +38,7 @@ function delta_time(year, month, day, hour, minute, second)
 	local seconds = os.difftime(future, now)
 
 	if (seconds < 0) then
-		seconds = seconds + 84600
+		seconds = seconds + 86400
 	end
 
 	return seconds * 1000000000
@@ -49,7 +49,7 @@ function set_time_text(ns, text)
 
 	if string.match(text, "%%0H") then
 		local hours_infinite = math.floor(ms / 3600000)
-		minutes_infinite = string.format("%02d", hours_infinite)
+		hours_infinite = string.format("%02d", hours_infinite)
 		text = string.gsub(text, "%%0H", hours_infinite)
 	end
 
@@ -85,12 +85,12 @@ function set_time_text(ns, text)
 
 	if string.match(text, "%%H") then
 		local hours_infinite = math.floor(ms / 3600000)
-		text = string.gsub(text, "%%HH", hours_infinite)
+		text = string.gsub(text, "%%H", hours_infinite)
 	end
 
 	if string.match(text, "%%M") then
 		local minutes_infinite = math.floor(ms / 60000)
-		text = string.gsub(text, "%%MM", minutes_infinite)
+		text = string.gsub(text, "%%M", minutes_infinite)
 	end
 
 	if string.match(text, "%%S") then
