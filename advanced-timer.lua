@@ -444,7 +444,7 @@ function script_properties()
 	obs.obs_properties_add_int(props, "hour", "Hour (0-24)", 0, 24, 1)
 	obs.obs_properties_add_int(props, "minutes", "Minutes (0-59)", 0, 59, 1)
 	obs.obs_properties_add_int(props, "seconds", "Seconds (0-59)", 0, 59, 1)
-	local f_prop = obs.obs_properties_add_text(props, "format", "Format", obs.OBS_TEXT_DEFAULT)
+	local f_prop = obs.obs_properties_add_text(props, "format", "Format", obs.OBS_TEXT_MULTILINE)
 	obs.obs_property_set_long_description(f_prop, "%d - days\n%0h - hours with leading zero (00..23)\n%h - hours (0..23)\n%0H - hours with leading zero (00..infinity)\n%H - hours (0..infinity)\n%0m - minutes with leading zero (00..59)\n%m - minutes (0..59)\n%0M - minutes with leading zero (00..infinity)\n%M - minutes (0..infinity)\n%0s - seconds with leading zero (00..59)\n%s - seconds (0..59)\n%0S - seconds with leading zero (00..infinity)\n%S - seconds (0..infinity)\n%t - tenths\n%2t - hundredths\n%3t - thousandths")
 
 	local p = obs.obs_properties_add_list(props, "source", "Text source", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
