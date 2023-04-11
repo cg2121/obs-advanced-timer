@@ -437,7 +437,7 @@ function script_properties()
 	obs.obs_property_set_modified_callback(p_mode, settings_modified)
 
 	obs.obs_properties_add_int(props, "duration", "Countdown duration (seconds)", 1, 100000000, 1)
-	obs.obs_properties_add_int(props, "offset", "Countup offset (seconds)", 0, 100000000, 1)
+	obs.obs_properties_add_int(props, "offset", "Countup from (seconds)", 0, 100000000, 1)
 	obs.obs_properties_add_int(props, "year", "Year", 1971, 100000000, 1)
 	obs.obs_properties_add_int(props, "month", "Month (1-12)", 1, 12, 1)
 	obs.obs_properties_add_int(props, "day", "Day (1-31)", 1, 31, 1)
