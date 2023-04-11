@@ -558,8 +558,8 @@ end
 
 function script_load(settings)
 	local sh = obs.obs_get_signal_handler()
-	obs.signal_handler_connect(sh, "source_show", source_activated)
-	obs.signal_handler_connect(sh, "source_hide", source_deactivated)
+	obs.signal_handler_connect(sh, "source_activate", source_activated)
+	obs.signal_handler_connect(sh, "source_deactivate", source_deactivated)
 
 	hotkey_id_reset = obs.obs_hotkey_register_frontend("reset_timer_thingy", "Reset Timer", reset)
 	hotkey_id_pause = obs.obs_hotkey_register_frontend("pause_timer", "Start/Stop Timer", on_pause)
